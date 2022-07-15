@@ -1,10 +1,12 @@
+using EFCoreAndSwaggerDemo.Common;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EFCoreAndSwaggerDemo.Controllers
 {
     [ApiController]
+    //[ApiVersion(ApiVersions.v1)]
     [Route("[controller]")]
-    public class WeatherForecastController : ControllerBase
+    public class WeatherForecastController : BaseApiController
     {
         private static readonly string[] Summaries = new[]
         {
