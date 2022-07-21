@@ -1,4 +1,5 @@
 using ContosoUniversity.Data;
+using EFCoreAndSwaggerDemo.Data.RP;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -33,17 +34,21 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // For Api Versioning
-builder.Services.AddApiVersioning(setup =>
-{
-    //setup.ApiVersionReader = new QueryStringApiVersionReader("api-version");
-    setup.ApiVersionReader = new QueryStringApiVersionReader();
-    setup.AssumeDefaultVersionWhenUnspecified = false;
-});
+//builder.Services.AddApiVersioning(setup =>
+//{
+//    //setup.ApiVersionReader = new QueryStringApiVersionReader("api-version");
+//    setup.ApiVersionReader = new QueryStringApiVersionReader();
+//    setup.AssumeDefaultVersionWhenUnspecified = false;
+//});
 
 // For EF Core
 builder.Services.AddDbContext<SchoolContext>(options 
     => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+// For RP Database
+builder.Services.AddDbContext<RPContext>(options
+    => options.UseSqlServer(builder.Configuration.GetConnectionString("RPDBConnection")));
 #endregion
 
 var app = builder.Build();
@@ -63,6 +68,9 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<SchoolContext>();
         DbInitializer.Initialize(context);
+
+        var rpContext = services.GetRequiredService<RPContext>();
+        RPDbInitializer.Initialize(rpContext);
     }
     catch (Exception ex)
     {

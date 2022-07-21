@@ -1,0 +1,121 @@
+<#@ assembly name="System.Core"
+#><#@ import namespace="System.IO"
+#><#@ import namespace="System.Linq"
+#><#@ import namespace="System.Text"
+#><#@ import namespace="System.Text.RegularExpressions"
+#><#@ import namespace="System.Collections.Generic"
+#><#+
+    // Transform the enumeration class
+    // Prerequisites:
+    // * A .cs file in the same directory as the template file, with the same name as the template file (without extension)
+    // * The cs file should only have a single partial class definition, which should extend from some Enumeration class
+    // * The class should have an enum EnumValue defined, which is the same as the original style of enum definition
+    // * The code file should be well formatted. We do not have syntax analyzing logic in the template, so it's possible that
+    //   some valid, wired C# source does not work.
+    //
+    // It generates:
+    // * The RawEnum property for each Enumeration instance
+    // * Parse / TryParse methods to parse from int or string
+    // * static readonly Enumeration instance definitions
+
+    public void transformEnumeration(string templateFile) {
+        var codeFile = Path.ChangeExtension(templateFile, ".cs");
+        if (!File.Exists(codeFile)) {
+            throw new Exception($"Code file {codeFile} was not found");
+        }
+
+        var code = File.ReadAllText(codeFile);
+
+        var match = Regex.Match(code, @"namespace\s+([^\s]+)");
+        if (!match.Success) {
+            throw new Exception($"Cannot find namespace in {codeFile}");
+        }
+        var ns = match.Groups[1].Value;
+
+        match = Regex.Match(code, @"partial\s+class\s+([^\s]+)\s*:\s*([^\s]+)");
+        if (!match.Success) {
+            throw new Exception($"Cannot find partial Enumeration definition in {codeFile}");
+        }
+        var implClass = match.Groups[1].Value;
+        var baseClass = match.Groups[2].Value;
+
+        match = Regex.Match(code, @"enum\s+EnumValue\s*\{([^\}]+)\}");
+        if (!match.Success) {
+            throw new Exception($"Cannot find enum EnumValue definition in {codeFile}");
+        }
+        var enumBody = match.Groups[1].Value;
+
+        Write(@"// This file is auto generated. DO NOT update it manually.
+using System;
+using System.Collections.Generic;
+
+namespace {0}
+{
+    [Newtonsoft.Json.JsonConverter(typeof(EFCoreAndSwaggerDemo.Common.RichEnum.EnumerationConverter), false)]
+    public partial class {1}
+    {
+        public static {1} Parse(int value)
+        {
+            if (ValueMapping.TryGetValue(value, out var type))
+            {
+                return type;
+            }
+
+            throw new ArgumentException($""{1} does not have a enumeration with value {value}"");
+        }
+
+        public static {1} Parse(string value)
+        {
+            if (NameMapping.TryGetValue(value?.ToUpper(), out var type))
+            {
+                return type;
+            }
+
+            throw new ArgumentException($""{1} does not have a enumeration with name {value}"");
+        }
+
+        public static bool TryParse(int value, out {1} type)
+        {
+            return ValueMapping.TryGetValue(value, out type);
+        }
+
+        public static bool TryParse(string value, out {1} type)
+        {
+            return NameMapping.TryGetValue(value?.ToUpper(), out type);
+        }
+
+        public EnumValue RawEnum { get; }
+
+        private {1}(EnumValue value, string name) : base((int)value, name)
+        {
+            RawEnum = value;
+        }
+".Replace("{0}", ns).Replace("{1}", implClass));
+        Write("\n");
+
+        Write("        #region EnumDefinitions\n");
+
+        var index = -1;
+        foreach (var l in Regex.Split(enumBody, @"[\r\n]+")) {
+            var line = l.Trim();
+            var m = Regex.Match(line, @"^(\w+)(?:\s*=\s*(.*))");
+            if (!m.Success) {
+                Write("        " + line);
+                Write("\n");
+                continue;
+            }
+
+            var name = m.Groups[1].Value;
+            Write($"        public static readonly {implClass} {name} = new {implClass}(EnumValue.{name}, nameof({name}));");
+            Write("\n");
+        }
+
+        Write(@"        #endregion
+
+        // This needs to be placed after all enum fields definition to get their values
+        private static readonly IReadOnlyDictionary<int, {1}> ValueMapping = GetValueMapping<{1}>();
+        private static readonly IReadOnlyDictionary<string, {1}> NameMapping = GetNameMapping<{1}>();
+    }
+}".Replace("{1}", implClass));
+        Write("\n");
+    }#>

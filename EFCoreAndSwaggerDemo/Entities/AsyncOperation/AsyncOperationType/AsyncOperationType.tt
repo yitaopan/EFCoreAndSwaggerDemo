@@ -1,0 +1,5 @@
+﻿<#@ template debug="false" hostspecific="true" language="C#"
+#><#@ output extension=".Generated.cs"
+#><#@ include file="../../../Common/RichEnum/Enumeration.ttinclude"
+#><# transformEnumeration(Host.TemplateFile);
+#>
