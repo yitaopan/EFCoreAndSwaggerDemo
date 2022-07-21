@@ -1,5 +1,7 @@
 using ContosoUniversity.Data;
 using EFCoreAndSwaggerDemo.Data.RP;
+using EFCoreAndSwaggerDemo.Repositories;
+using EFCoreAndSwaggerDemo.Services;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -49,6 +51,10 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 // For RP Database
 builder.Services.AddDbContext<RPContext>(options
     => options.UseSqlServer(builder.Configuration.GetConnectionString("RPDBConnection")));
+
+// For Async Operations
+builder.Services.AddScoped<IAsyncOperationService, AsyncOperationService>();
+builder.Services.AddScoped<IAsyncOperationRepository, AsyncOperationRepository>();
 #endregion
 
 var app = builder.Build();

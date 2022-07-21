@@ -5,7 +5,7 @@ namespace EFCoreAndSwaggerDemo.Models.Entities.AsyncOperation
     public class AsyncOperationEntity : BaseEntity
     {
         // The primary key should be random?
-        public int ID { get; set; }
+        public string Id { get; set; }
 
         public AsyncOperationStatus Status { get; set; }
 
@@ -15,13 +15,13 @@ namespace EFCoreAndSwaggerDemo.Models.Entities.AsyncOperation
          * 
          * NullValueHandling = NullValueHandling.Ignore
          */
-        public string ResourceId { get; set; }
+        public string? ResourceId { get; set; }
 
-        public string ResourceName { get; set; }
+        public string? ResourceName { get; set; }
 
-        public string ResourceGroup { get; set; }
+        public string? ResourceGroup { get; set; }
 
-        public string SubscriptionId { get; set; }
+        public string? SubscriptionId { get; set; }
 
         public AbstractAsyncOperationType OperationType { get; set; }
 
